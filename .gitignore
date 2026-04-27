@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Personal wiki data (not for public repo)
+wiki/bloomberg/
+wiki/sources/
+wiki/concepts/
+wiki/people/
+wiki/index.md
+wiki/log.md
+wiki/_test_bb_input/
+
+# Keep wiki/CLAUDE.md (schema — part of the code)
+
+# OS
+.DS_Store
+
+# Env
+.env
+.env.*
