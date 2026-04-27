@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HN Dashboard</title>
+<title>Lore</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 :root {
   color-scheme: light;
@@ -163,6 +164,26 @@ main{padding:18px;overflow-y:auto;min-width:0;}
 
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:#ccc;border-radius:10px;}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* rendered markdown in wiki */
+.md-body h1,.md-body h2,.md-body h3{font-weight:700;margin:12px 0 5px;color:var(--text);}
+.md-body h1{font-size:14px;}
+.md-body h2{font-size:13px;border-bottom:1px solid var(--border);padding-bottom:3px;}
+.md-body h3{font-size:12px;}
+.md-body p{margin-bottom:8px;font-size:12px;line-height:1.7;}
+.md-body blockquote{border-left:3px solid var(--orange);margin:8px 0;padding:4px 10px;background:var(--orange-light);border-radius:0 6px 6px 0;font-size:12px;color:var(--text);}
+.md-body code{background:#f5f5f0;padding:1px 4px;border-radius:3px;font-size:11px;font-family:'SF Mono',Monaco,monospace;}
+.md-body pre{background:#f5f5f0;padding:8px;border-radius:6px;overflow-x:auto;margin-bottom:8px;}
+.md-body pre code{background:none;padding:0;}
+.md-body ul,.md-body ol{padding-left:18px;margin-bottom:8px;font-size:12px;}
+.md-body li{margin-bottom:3px;line-height:1.6;}
+.md-body a{color:var(--link);}
+.md-body hr{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.md-body strong{font-weight:700;}
 </style>
 </head>
 <body>
@@ -238,7 +259,7 @@ main{padding:18px;overflow-y:auto;min-width:0;}
   <div class="panel-tabs">
     <button class="tab active" id="tabComments" onclick="switchTab('comments')">💬 Comments</button>
     <button class="tab" id="tabWiki" onclick="switchTab('wiki')">📚 Wiki</button>
-    <button class="tab" id="tabBloomberg" onclick="switchTab('bloomberg')">📊 BB</button>
+    <button class="tab" id="tabBloomberg" onclick="switchTab('bloomberg')" style="display:none">📊 BB</button>
   </div>
   <div class="panel-body" id="panelBody">
     <div class="empty"><div class="empty-icon">👈</div><p>Click a story to see comments</p></div>
@@ -247,7 +268,19 @@ main{padding:18px;overflow-y:auto;min-width:0;}
 
 </div><!-- layout -->
 
+<div class="toast" id="toast"></div>
+
 <script>
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 let allStories = [], displayedStories = [];
 let currentType = 'top', currentTag = '', searchQuery = '';
@@ -505,6 +538,8 @@ async function saveToWiki(storyId, btn) {
       btn.textContent = '⭐ Saved';
       btn.classList.add('saved');
       btn.closest('.card').classList.remove('saving');
+      const tagStr = (result.tags || []).join(', ') || 'general';
+      showToast(`Saved · ${tagStr}`);
       refreshWikiList();
     } else {
       btn.textContent = '❌ Failed';
@@ -574,6 +609,7 @@ async function openWikiPage(entry) {
     // Strip frontmatter, render body
     const bodyMd = md.replace(/^---[\s\S]*?---\n/, '').trim();
 
+    const renderedMd = marked.parse(bodyMd, { breaks: true });
     body.innerHTML = `
       <button class="bb-back" onclick="showWikiPanel()">← Back to saved</button>
       <div class="cmt-hdr">${escHtml(entry.title || entry.id)}</div>
@@ -581,7 +617,7 @@ async function openWikiPage(entry) {
         ${url ? `<a href="${escHtml(url)}" target="_blank" class="btn-hn" style="display:inline-block;width:auto;padding:4px 10px">↗ Article</a>` : ''}
         ${hnId ? `<a href="https://news.ycombinator.com/item?id=${escHtml(hnId)}" target="_blank" class="btn-hn" style="display:inline-block;width:auto;padding:4px 10px">💬 HN Discussion</a>` : ''}
       </div>
-      <div class="bb-section-body" style="white-space:pre-wrap;font-size:12px;line-height:1.7">${escHtml(bodyMd)}</div>`;
+      <div class="md-body">${renderedMd}</div>`;
   } catch {
     body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Could not load page</p></div>`;
   }
@@ -615,6 +651,8 @@ async function loadBloombergList() {
     const r = await fetch('/api/bloomberg/list');
     const { reports } = await r.json();
     bbReports = reports || [];
+    // Show BB tab only when reports exist
+    document.getElementById('tabBloomberg').style.display = bbReports.length ? '' : 'none';
     if (activeTab === 'bloomberg') renderBloombergList();
   } catch {}
 }
