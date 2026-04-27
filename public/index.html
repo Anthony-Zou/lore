@@ -538,7 +538,7 @@ async function saveToWiki(storyId, btn) {
       btn.textContent = '⭐ Saved';
       btn.classList.add('saved');
       btn.closest('.card').classList.remove('saving');
-      const tagStr = (result.tags || []).join(', ') || 'general';
+      const tagStr = (result.tags || []).length ? result.tags.join(', ') : 'general';
       showToast(`Saved · ${tagStr}`);
       refreshWikiList();
     } else {
