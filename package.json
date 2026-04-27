@@ -1,7 +1,7 @@
 {
-  "name": "hn-dashboard",
+  "name": "lore",
   "version": "1.0.0",
-  "description": "Hacker News Dashboard + LLM Wiki",
+  "description": "Turn anything you read into a Claude-queryable wiki",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -1,108 +1,83 @@
-# HN Dashboard + LLM Wiki
+# Lore
 
-A Hacker News reader that doubles as a personal knowledge base.
-Browse top stories, read community highlights, and save articles to a structured wiki — all in one app.
+**Turn anything you read into a Claude-queryable wiki.**
+
+Lore starts with Hacker News. Save any story with one click — it becomes a structured Markdown file with the article excerpt, top comments, and auto-extracted tags. Open it in Obsidian. Ask Claude about it. Build your own knowledge base, one article at a time.
 
 ---
 
 ## Quick Start
 
 ```bash
-cd hn-dashboard
+git clone https://github.com/YOUR_USERNAME/lore
+cd lore
 npm install
 node server.js
 # → http://localhost:3000
 ```
 
-For hot-reload during development:
-```bash
-npm run dev
-```
-
-Requires **Node.js 18+** (uses native `fetch`).
+Requires **Node.js 18+**.
 
 ---
 
-## Features
+## How it works
 
-| Feature | Description |
-|---|---|
-| 🔥 Live HN feeds | Top, New, Ask HN, Show HN, Jobs — refreshed every 5 min |
-| 💬 Comment preview | See top comments without leaving the dashboard |
-| 🔍 Search + filter | Filter by topic: AI, startup, programming, security, science, business |
-| ⭐ Save to Wiki | One click saves a story → structured Markdown in `wiki/` |
-| 📚 Wiki panel | See all saved articles in the right panel |
-| 🔄 SSE updates | Real-time save status via Server-Sent Events |
-
----
-
-## Wiki
-
-Saved articles live in `wiki/` as Markdown files:
+1. Browse HN feeds (Top, New, Ask HN, Show HN, Jobs)
+2. Click **☆ Save** on any story
+3. Lore fetches the article text, top comments, and extracts topic tags
+4. A structured Markdown file lands in `wiki/sources/`
+5. Open `wiki/` as an Obsidian vault — or run `claude` inside it to query everything you've saved
 
 ```
 wiki/
-├── CLAUDE.md        ← schema for Claude Code / Codex
+├── CLAUDE.md        ← schema for Claude Code
 ├── index.md         ← master table (auto-maintained)
 ├── log.md           ← ingest history
-├── sources/         ← one file per HN article
-├── concepts/        ← auto-generated topic pages
-└── people/          ← author / company pages
+├── sources/         ← one file per saved article
+└── concepts/        ← auto-generated topic pages
 ```
 
-### Open in Obsidian
+---
 
-1. Install [Obsidian](https://obsidian.md) (free)
-2. Open Obsidian → **Open folder as vault** → select `hn-dashboard/wiki/`
-3. Hit Graph View to see your knowledge network
+## Use with Claude Code
 
-### Use with Claude Code / Codex
-
-Open a terminal in `wiki/` and run Claude Code:
 ```bash
 cd wiki
 claude
 ```
 
 Claude reads `CLAUDE.md` automatically and knows the full schema. Then:
-- `"Lint the wiki"` — find orphan pages and contradictions
+
 - `"What do I know about AI agents?"` — cross-article synthesis
-- `"Ingest raw/my-article.md"` — add a non-HN source
+- `"Lint the wiki"` — find orphan pages, missing definitions
+- `"Ingest raw/my-article.md"` — add any non-HN source
 
 ---
 
-## Adding Bloomberg Reports (coming soon)
+## Extensible by design
 
-Drop your daily Bloomberg report into `wiki/sources/bloomberg-YYYY-MM-DD.md`
-and tell Claude: `"Ingest wiki/sources/bloomberg-2026-04-27.md"`.
-
-Claude will extract key themes, update concept pages, and cross-link with HN articles.
+The wiki layer is source-agnostic. HN is the first parser. The same architecture accepts any structured input — RSS feeds, PDFs, financial reports, YouTube transcripts. Add a parser, point it at `wiki/`, done.
 
 ---
 
-## API Endpoints
+## API
 
-| Route | Method | Description |
-|---|---|---|
-| `/api/stories/:type` | GET | HN feed (top/new/ask/show/job) |
-| `/api/item/:id` | GET | Single HN item |
-| `/api/comments/:id` | GET | Top-level comments |
-| `/api/wiki/save` | POST | Save story to wiki |
-| `/api/wiki/list` | GET | List saved entries |
-| `/api/wiki/page/*` | GET | Read a wiki page |
-| `/api/wiki/events` | GET | SSE stream for live updates |
-| `/api/health` | GET | Health check |
+| Route | Description |
+|---|---|
+| `GET /api/stories/:type` | HN feed (top/new/ask/show/job) |
+| `POST /api/wiki/save` | Save story → wiki |
+| `GET /api/wiki/list` | List saved entries |
+| `GET /api/wiki/page/*` | Read a wiki page |
+| `GET /api/wiki/events` | SSE stream for live updates |
 
 ---
 
-## Dependencies
+## Stack
 
 ```
-express      — HTTP server
-cors         — CORS headers
-cheerio      — HTML parsing for article text extraction
-node-fetch   — fetch polyfill (Node < 18)
-nodemon      — dev hot-reload (devDependency)
+express    — HTTP server
+cheerio    — article text extraction
+nodemon    — dev hot-reload
 ```
 
-No database. No external services. No API keys required.
+No database. No API keys. No external services.
